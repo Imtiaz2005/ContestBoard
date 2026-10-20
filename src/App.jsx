@@ -5,15 +5,15 @@ import Discover from "./pages/Discover";
 import ContestDetails from "./pages/ContestDetails";
 import { SavedProvider } from "./context/SavedContext";
 import Saved from "./pages/Saved";
+import Portfolio from "./pages/Portfolio";
+
 
 
 function Dashboard() {
   return <h1 className="text-2xl font-bold">Dashboard</h1>;
 }
 
-function Portfolio() {
-  return <h1 className="text-2xl font-bold">Portfolio</h1>;
-}
+
 
 function App() {
   return (
