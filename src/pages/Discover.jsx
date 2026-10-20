@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import contests from "../data/contests";
+import { useSavedContests } from "../context/SavedContext";
 import { Link } from "react-router-dom";
 const categories = [
   "All",
@@ -19,7 +20,7 @@ function Discover() {
   const [location, setLocation] = useState("");
   const [entryFee, setEntryFee] = useState("");
   const [organizer, setOrganizer] = useState("");
-
+const { savedIds, toggleSaved } = useSavedContests();
   // Search, category and filters
   const filteredContests = contests
     .filter((contest) => {
@@ -234,7 +235,20 @@ function Discover() {
                 <p className="mt-1 text-xs text-gray-400">
                   {contest.location}
                 </p>
-
+<button
+  type="button"
+  onClick={() => toggleSaved(contest.id)}
+  aria-pressed={savedIds.includes(contest.id)}
+  className={`mb-2 w-full rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
+    savedIds.includes(contest.id)
+      ? "border-indigo-700 bg-indigo-50 text-indigo-700"
+      : "border-gray-300 bg-white text-gray-700 hover:border-indigo-500"
+  }`}
+>
+  {savedIds.includes(contest.id)
+    ? "♥ Saved"
+    : "♡ Save contest"}
+</button>
                 <Link
                   to={`/contests/${contest.id}`}
                   className="mt-4 block w-full rounded-lg bg-indigo-700 px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-800"

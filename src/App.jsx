@@ -3,10 +3,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Discover from "./pages/Discover";
 import ContestDetails from "./pages/ContestDetails";
+import { SavedProvider } from "./context/SavedContext";
+import Saved from "./pages/Saved";
 
-function Saved() {
-  return <h1 className="text-2xl font-bold">Saved Contests</h1>;
-}
 
 function Dashboard() {
   return <h1 className="text-2xl font-bold">Dashboard</h1>;
@@ -19,16 +18,18 @@ function Portfolio() {
 function App() {
   return (
     <BrowserRouter>
-      <Navbar />
+      <SavedProvider>
+        <Navbar />
 
-      <main className="mx-auto max-w-7xl px-5 py-8 md:px-8">
-        <Routes>
-          <Route path="/" element={<Discover />} />
-          <Route path="/contests/:id" element={<ContestDetails />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/portfolio" element={<Portfolio />} />
-        </Routes>
-      </main>
+        <main className="mx-auto max-w-7xl px-5 py-8 md:px-8">
+          <Routes>
+            <Route path="/" element={<Discover />} />
+            <Route path="/contests/:id" element={<ContestDetails />} />
+            <Route path="/saved" element={<Saved />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+          </Routes>
+        </main>
+      </SavedProvider>
     </BrowserRouter>
   );
 }
