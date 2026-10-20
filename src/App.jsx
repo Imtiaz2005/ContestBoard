@@ -1,10 +1,8 @@
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
+import Discover from "./pages/Discover";
 
-function Discover() {
-  return <h1 className="text-2xl font-bold">Discover Contests</h1>;
-}
 
 function Saved() {
   return <h1 className="text-2xl font-bold">Saved Contests</h1>;
