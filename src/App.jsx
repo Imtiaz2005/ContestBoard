@@ -2,7 +2,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Discover from "./pages/Discover";
-
+import ContestDetails from "./pages/ContestDetails";
 
 function Saved() {
   return <h1 className="text-2xl font-bold">Saved Contests</h1>;
@@ -24,7 +24,7 @@ function App() {
       <main className="mx-auto max-w-7xl px-5 py-8 md:px-8">
         <Routes>
           <Route path="/" element={<Discover />} />
-          <Route path="/saved" element={<Saved />} />
+          <Route path="/contests/:id" element={<ContestDetails />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/portfolio" element={<Portfolio />} />
         </Routes>

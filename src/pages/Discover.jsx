@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import contests from "../data/contests";
-
+import { Link } from "react-router-dom";
 const categories = [
   "All",
   "Programming",
@@ -114,11 +114,10 @@ function Discover() {
               type="button"
               onClick={() => setSelectedCategory(category)}
               aria-pressed={selectedCategory === category}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                selectedCategory === category
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${selectedCategory === category
                   ? "border-indigo-700 bg-indigo-700 text-white"
                   : "border-gray-300 bg-white text-gray-700 hover:border-indigo-500"
-              }`}
+                }`}
             >
               {category}
             </button>
@@ -215,11 +214,10 @@ function Discover() {
                   </span>
 
                   <span
-                    className={`rounded-md px-2 py-1 text-xs ${
-                      contest.isFree
+                    className={`rounded-md px-2 py-1 text-xs ${contest.isFree
                         ? "bg-green-100 text-green-800"
                         : "bg-amber-100 text-amber-800"
-                    }`}
+                      }`}
                   >
                     {contest.isFree ? "Free" : "Paid"}
                   </span>
@@ -237,15 +235,12 @@ function Discover() {
                   {contest.location}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    alert(`Selected contest: ${contest.title}`)
-                  }
-                  className="mt-4 w-full rounded-lg bg-indigo-700 px-3 py-2.5 text-sm font-medium text-white hover:bg-indigo-800"
+                <Link
+                  to={`/contests/${contest.id}`}
+                  className="mt-4 block w-full rounded-lg bg-indigo-700 px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-800"
                 >
                   View details
-                </button>
+                </Link>
               </article>
             ))}
           </div>

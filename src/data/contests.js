@@ -8,6 +8,18 @@ const contests = [
     deadline: "2026-10-22",
     location: "Online",
     isFree: true,
+     organizerType: "University Club",
+  description:
+    "A programming competition where university students collaborate to solve real-world problems using technology.",
+
+  rules: [
+    "Participants must register before the deadline.",
+    "Teams must follow the competition guidelines.",
+    "All submitted projects must be original.",
+  ],
+
+  prize: "Prize pool to be announced",
+  eligibility: "University students",
   },
   {
     id: 2,
