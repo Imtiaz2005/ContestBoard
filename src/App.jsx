@@ -6,8 +6,8 @@ import ContestDetails from "./pages/ContestDetails";
 import { SavedProvider } from "./context/SavedContext";
 import Saved from "./pages/Saved";
 import Portfolio from "./pages/Portfolio";
-
-
+import Settings from "./pages/Settings";
+import { ProfileProvider } from "./context/ProfileContext";
 
 function Dashboard() {
   return <h1 className="text-2xl font-bold">Dashboard</h1>;
@@ -19,16 +19,19 @@ function App() {
   return (
     <BrowserRouter>
       <SavedProvider>
-        <Navbar />
+        <ProfileProvider>
+          <Navbar />
 
-        <main className="mx-auto max-w-7xl px-5 py-8 md:px-8">
-          <Routes>
-            <Route path="/" element={<Discover />} />
-            <Route path="/contests/:id" element={<ContestDetails />} />
-            <Route path="/saved" element={<Saved />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-          </Routes>
-        </main>
+          <main className="mx-auto max-w-7xl px-5 py-8 md:px-8">
+            <Routes>
+              <Route path="/" element={<Discover />} />
+              <Route path="/contests/:id" element={<ContestDetails />} />
+              <Route path="/saved" element={<Saved />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </main>
+        </ProfileProvider>
       </SavedProvider>
     </BrowserRouter>
   );
