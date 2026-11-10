@@ -1,36 +1,6 @@
-
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-const sampleContests = [
-  {
-    contest_id: 1,
-    title: "Inter-University Hackathon",
-    category: "Programming",
-    event_mode: "Offline",
-    contest_start: "2026-12-12",
-    registration_deadline: "2026-12-05",
-    status: "approved",
-  },
-  {
-    contest_id: 2,
-    title: "Robotics Challenge",
-    category: "Robotics",
-    event_mode: "Hybrid",
-    contest_start: "2026-12-20",
-    registration_deadline: "2026-12-12",
-    status: "pending",
-  },
-  {
-    contest_id: 3,
-    title: "Business Case Competition",
-    category: "Business",
-    event_mode: "Online",
-    contest_start: "2027-01-10",
-    registration_deadline: "2027-01-03",
-    status: "rejected",
-  },
-];
+import axios from "axios"; // API কলের জন্য
 
 const statusStyles = {
   approved: "bg-green-100 text-green-700",
@@ -40,7 +10,6 @@ const statusStyles = {
 
 const formatDate = (date) => {
   if (!date) return "Not set";
-
   return new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -49,9 +18,31 @@ const formatDate = (date) => {
 };
 
 const ManageContests = () => {
-  const [contests, setContests] = useState(sampleContests);
+  const [contests, setContests] = useState([]); // ইনিশিয়ালি খালি অ্যারে
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(true); // লোডিং স্টেট
+
+  // ১. কম্পোনেন্ট লোড হওয়ার সাথে সাথে API থেকে কনটেস্ট ফেচ করা
+  useEffect(() => {
+    const fetchContests = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost/ContestBoard/backend/api/contests/get_my_contests.php",
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          setContests(response.data.contests);
+        }
+      } catch (error) {
+        console.error("Error fetching contests:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContests();
+  }, []);
 
   const filteredContests = useMemo(() => {
     return contests.filter((contest) => {
@@ -73,18 +64,42 @@ const ManageContests = () => {
     rejected: contests.filter((c) => c.status === "rejected").length,
   };
 
-  // Temporary UI action. Real API update will be added later.
-  const handleDelete = (contestId) => {
+  // ২. রিয়েল API কল দিয়ে ডিলিট করা
+  const handleDelete = async (contestId) => {
     const confirmed = window.confirm(
-      "Are you sure you want to remove this sample contest from the page?"
+      "Are you sure you want to completely delete this contest? This action cannot be undone."
     );
 
     if (!confirmed) return;
 
-    setContests((current) =>
-      current.filter((contest) => contest.contest_id !== contestId)
-    );
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/contests/delete_contest.php",
+        { contest_id: contestId },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        // UI থেকে কনটেস্টটি রিমুভ করে দেওয়া
+        setContests((current) =>
+          current.filter((contest) => contest.contest_id !== contestId)
+        );
+      } else {
+        alert(response.data.message || "Failed to delete contest.");
+      }
+    } catch (error) {
+      console.error("Error deleting contest:", error);
+      alert("An error occurred while deleting the contest.");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-lg font-semibold text-gray-500">Loading contests...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-7">
@@ -94,11 +109,9 @@ const ManageContests = () => {
           <p className="text-sm font-semibold text-indigo-600">
             ORGANIZER PANEL
           </p>
-
           <h1 className="mt-2 text-3xl font-bold text-gray-900">
             Manage Contests
           </h1>
-
           <p className="mt-2 text-gray-600">
             View and manage the contests you have created.
           </p>
@@ -170,7 +183,9 @@ const ManageContests = () => {
               No contests found
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Try changing your search or status filter.
+              {contests.length === 0 
+                ? "You haven't created any contests yet." 
+                : "Try changing your search or status filter."}
             </p>
           </div>
         ) : (
@@ -188,7 +203,7 @@ const ManageContests = () => {
 
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                        statusStyles[contest.status]
+                        statusStyles[contest.status] || "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {contest.status}
@@ -209,11 +224,11 @@ const ManageContests = () => {
 
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <Link
-  to={`/organizer/contests/${contest.contest_id}/results`}
-  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
->
-  Manage Participants & Results
-</Link>
+                    to={`/organizer/contests/${contest.contest_id}/results`}
+                    className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Manage
+                  </Link>
                   <Link
                     to={`/organizer/contests/${contest.contest_id}/edit`}
                     className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"

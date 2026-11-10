@@ -1,35 +1,57 @@
-
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useProfile } from "../../context/ProfileContext"; // পাথ আপনার ফোল্ডার অনুযায়ী ঠিক করে নিবেন
 
 const OrganizerDashboard = () => {
-  // Temporary sample data.
-  // Later, these values will come from the database.
+  const { profile } = useProfile(); // Context থেকে লগইন করা অর্গানাইজারের রিয়েল ডাটা নিচ্ছি
+  const [contestStats, setContestStats] = useState({ total: 0, approved: 0, pending: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost/ContestBoard/backend/api/contests/get_dashboard_stats.php",
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          setContestStats(response.data.stats);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  // Profile Context থেকে ডাটা নিয়ে অর্গানাইজার অবজেক্ট তৈরি
   const organizer = {
-    name: "Organizer Name",
-    organizationName: "Organization Name",
-    email: "organizer@example.com",
-    mobile: "01XXXXXXXXX",
-    photo: "",
+    name: profile?.name || "Organizer Name",
+    organizationName: profile?.organizationName || "Organization not updated",
+    email: profile?.email || "No email",
+    mobile: profile?.phone || "No phone number added",
+    photo: profile?.photo || "",
   };
 
   const stats = [
     {
       title: "Total Contests",
-      value: 0,
+      value: contestStats.total,
       icon: "📋",
       color: "bg-indigo-50 text-indigo-700",
       description: "All your contests",
     },
     {
       title: "Approved Contests",
-      value: 0,
+      value: contestStats.approved,
       icon: "✅",
       color: "bg-green-50 text-green-700",
       description: "Approved by admin",
     },
     {
       title: "Pending Contests",
-      value: 0,
+      value: contestStats.pending,
       icon: "⏳",
       color: "bg-amber-50 text-amber-700",
       description: "Waiting for approval",
@@ -40,14 +62,10 @@ const OrganizerDashboard = () => {
     <div className="space-y-8">
       {/* Page heading */}
       <div>
-        <p className="text-sm font-medium text-indigo-600">
-          ORGANIZER PANEL
-        </p>
-
+        <p className="text-sm font-medium text-indigo-600">ORGANIZER PANEL</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
           Dashboard
         </h1>
-
         <p className="mt-2 text-gray-600">
           Manage your contests and keep track of their approval status.
         </p>
@@ -63,7 +81,7 @@ const OrganizerDashboard = () => {
             <img
               src={organizer.photo}
               alt={organizer.name}
-              className="h-24 w-24 rounded-full border-4 border-indigo-50 object-cover"
+              className="h-24 w-24 rounded-full border-4 border-indigo-50 object-cover shrink-0"
             />
           ) : (
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-3xl font-bold text-indigo-700">
@@ -78,10 +96,7 @@ const OrganizerDashboard = () => {
 
           {/* Organizer information */}
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold text-gray-900">
-              {organizer.name}
-            </h2>
-
+            <h2 className="text-xl font-bold text-gray-900">{organizer.name}</h2>
             <p className="mt-1 font-medium text-indigo-700">
               {organizer.organizationName}
             </p>
@@ -100,7 +115,7 @@ const OrganizerDashboard = () => {
           </div>
 
           <Link
-            to="/settings"
+            to="/organizer/settings"
             className="inline-flex shrink-0 items-center justify-center rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             Edit Profile
@@ -111,10 +126,7 @@ const OrganizerDashboard = () => {
       {/* Contest statistics */}
       <section>
         <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
-            Contest Overview
-          </h2>
-
+          <h2 className="text-xl font-bold text-gray-900">Contest Overview</h2>
           <p className="mt-1 text-sm text-gray-500">
             A summary of your contest activities.
           </p>
@@ -128,25 +140,18 @@ const OrganizerDashboard = () => {
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">
-                    {stat.title}
-                  </p>
-
+                  <p className="text-sm font-medium text-gray-500">{stat.title}</p>
                   <p className="mt-3 text-4xl font-bold tracking-tight text-gray-900">
                     {stat.value}
                   </p>
                 </div>
-
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-xl text-xl ${stat.color}`}
                 >
                   {stat.icon}
                 </div>
               </div>
-
-              <p className="mt-4 text-sm text-gray-500">
-                {stat.description}
-              </p>
+              <p className="mt-4 text-sm text-gray-500">{stat.description}</p>
             </div>
           ))}
         </div>
@@ -154,10 +159,7 @@ const OrganizerDashboard = () => {
 
       {/* Quick actions */}
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900">
-          Quick Actions
-        </h2>
-
+        <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
         <p className="mt-1 text-sm text-gray-500">
           Quickly access your contest management tools.
         </p>
@@ -170,9 +172,8 @@ const OrganizerDashboard = () => {
             <span aria-hidden="true">＋</span>
             Create Contest
           </Link>
-
           <Link
-            to="/organizer/contests"
+            to="/organizer/create-contest"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             Manage Contests

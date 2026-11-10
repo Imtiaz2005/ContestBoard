@@ -1,40 +1,5 @@
-
-import { useState } from "react";
-
-const initialContests = [
-  {
-    id: 1,
-    title: "National Programming Contest",
-    organizer: "UITS Programming Club",
-    category: "Programming",
-    status: "pending",
-    date: "Oct 25, 2026",
-  },
-  {
-    id: 2,
-    title: "Inter-University Robotics Challenge",
-    organizer: "UIU Robotics Club",
-    category: "Robotics",
-    status: "approved",
-    date: "Oct 24, 2026",
-  },
-  {
-    id: 3,
-    title: "National Web Design Competition",
-    organizer: "CSE Society",
-    category: "Web Development",
-    status: "rejected",
-    date: "Oct 23, 2026",
-  },
-  {
-    id: 4,
-    title: "University Hackathon 2026",
-    organizer: "Tech Innovation Club",
-    category: "Hackathon",
-    status: "pending",
-    date: "Oct 22, 2026",
-  },
-];
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const statusStyles = {
   pending: "bg-amber-50 text-amber-700",
@@ -43,43 +8,91 @@ const statusStyles = {
 };
 
 export default function AdminContests() {
-  const [contests, setContests] = useState(initialContests);
+  const [contests, setContests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
 
-  const updateStatus = (id, status) => {
-    setContests((current) =>
-      current.map((contest) =>
-        contest.id === id ? { ...contest, status } : contest
-      )
-    );
+  // ১. ডাটাবেজ থেকে সব কনটেস্ট লোড করা
+  useEffect(() => {
+    const fetchContests = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost/ContestBoard/backend/api/admin/get_contests.php",
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          setContests(response.data.contests);
+        }
+      } catch (error) {
+        console.error("Error fetching contests:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContests();
+  }, []);
 
-    setMessage(`Contest status changed to ${status}.`);
+  // ২. API কল করে স্ট্যাটাস আপডেট করা
+  const updateStatus = async (id, status) => {
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/admin/update_status.php",
+        { id, status },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setContests((current) =>
+          current.map((contest) =>
+            contest.id === id ? { ...contest, status } : contest
+          )
+        );
+        setMessage(`Contest status changed to ${status}.`);
+        setTimeout(() => setMessage(""), 3000); // ৩ সেকেন্ড পর মেসেজ মুছে যাবে
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update status.");
+    }
   };
 
-  const removeContest = (id) => {
+  // ৩. API কল করে কনটেস্ট রিমুভ করা
+  const removeContest = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to remove this contest?"
+      "Are you sure you want to permanently delete this contest from the database?"
     );
 
     if (!confirmed) return;
 
-    setContests((current) =>
-      current.filter((contest) => contest.id !== id)
-    );
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/admin/delete_contest.php",
+        { id },
+        { withCredentials: true }
+      );
 
-    setMessage("Contest removed from this demo list.");
+      if (response.data.success) {
+        setContests((current) => current.filter((contest) => contest.id !== id));
+        setMessage("Contest permanently removed.");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting contest:", error);
+      alert("Failed to delete contest.");
+    }
   };
 
   const filteredContests = contests.filter((contest) => {
-    const matchesStatus =
-      filter === "all" || contest.status === filter;
-
-    const matchesSearch =
-      `${contest.title} ${contest.organizer} ${contest.category}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
+    const matchesStatus = filter === "all" || contest.status === filter;
+    const matchesSearch = `${contest.title} ${contest.organizer} ${contest.category}`
+      .toLowerCase()
+      .includes(search.toLowerCase());
 
     return matchesStatus && matchesSearch;
   });
@@ -91,24 +104,24 @@ export default function AdminContests() {
     rejected: contests.filter((c) => c.status === "rejected").length,
   };
 
+  if (loading) {
+    return <div className="p-10 text-center text-lg text-slate-500">Loading contests...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      {/* Page heading */}
       <div>
         <p className="text-sm font-medium text-indigo-600">
           ADMINISTRATION / CONTESTS
         </p>
-
         <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
           Contest Management
         </h1>
-
         <p className="mt-2 text-sm text-slate-500">
           Review contest submissions and manage their approval status.
         </p>
       </div>
 
-      {/* Statistics */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {[
           { label: "All Contests", key: "all", color: "text-slate-900" },
@@ -128,7 +141,6 @@ export default function AdminContests() {
         ))}
       </div>
 
-      {/* Contest list */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -149,7 +161,6 @@ export default function AdminContests() {
           />
         </div>
 
-        {/* Filters */}
         <div className="mt-5 flex flex-wrap gap-2">
           {[
             { label: "All", value: "all" },
@@ -168,23 +179,17 @@ export default function AdminContests() {
               }`}
             >
               {item.label}
-              <span className="ml-2 opacity-75">
-                {counts[item.value]}
-              </span>
+              <span className="ml-2 opacity-75">{counts[item.value]}</span>
             </button>
           ))}
         </div>
 
         {message && (
-          <div
-            role="status"
-            className="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-700"
-          >
+          <div role="status" className="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
             {message}
           </div>
         )}
 
-        {/* Responsive contest cards */}
         <div className="mt-5 space-y-3">
           {filteredContests.map((contest) => (
             <article
@@ -197,7 +202,6 @@ export default function AdminContests() {
                     <h3 className="font-semibold text-slate-900">
                       {contest.title}
                     </h3>
-
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
                         statusStyles[contest.status]
@@ -215,7 +219,6 @@ export default function AdminContests() {
                     <span className="rounded-md bg-indigo-50 px-2.5 py-1.5 text-indigo-700">
                       {contest.category}
                     </span>
-
                     <span className="rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-600">
                       Submitted: {contest.date}
                     </span>
@@ -226,9 +229,7 @@ export default function AdminContests() {
                   {contest.status !== "approved" && (
                     <button
                       type="button"
-                      onClick={() =>
-                        updateStatus(contest.id, "approved")
-                      }
+                      onClick={() => updateStatus(contest.id, "approved")}
                       className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
                     >
                       Approve
@@ -238,9 +239,7 @@ export default function AdminContests() {
                   {contest.status !== "rejected" && (
                     <button
                       type="button"
-                      onClick={() =>
-                        updateStatus(contest.id, "rejected")
-                      }
+                      onClick={() => updateStatus(contest.id, "rejected")}
                       className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-200"
                     >
                       Reject
@@ -261,19 +260,13 @@ export default function AdminContests() {
 
           {filteredContests.length === 0 && (
             <div className="py-12 text-center">
-              <p className="font-semibold text-slate-700">
-                No contests found
-              </p>
+              <p className="font-semibold text-slate-700">No contests found</p>
               <p className="mt-1 text-sm text-slate-500">
                 Try changing the filter or search term.
               </p>
             </div>
           )}
         </div>
-
-        <p className="mt-5 text-xs text-slate-400">
-          Demo mode: changes are temporary and are not saved to the database.
-        </p>
       </section>
     </div>
   );

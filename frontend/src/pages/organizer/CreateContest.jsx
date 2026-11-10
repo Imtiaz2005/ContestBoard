@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
 const initialForm = {
   title: "",
   category: "Programming",
@@ -48,6 +48,7 @@ const labelClass = "block text-sm font-medium text-gray-700";
 const CreateContest = () => {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
   const updateField = (event) => {
@@ -55,50 +56,51 @@ const CreateContest = () => {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => { // async যোগ করা হয়েছে
     event.preventDefault();
     setError("");
+    setSuccess("");
 
-    if (
-      form.registration_deadline &&
-      form.registration_start &&
-      form.registration_deadline < form.registration_start
-    ) {
+    if (form.registration_deadline && form.registration_start && form.registration_deadline < form.registration_start) {
       setError("Registration deadline cannot be before registration opens.");
       return;
     }
-
-    if (
-      form.contest_start &&
-      form.contest_end &&
-      form.contest_end < form.contest_start
-    ) {
+    if (form.contest_start && form.contest_end && form.contest_end < form.contest_start) {
       setError("Contest end date cannot be before its start date.");
       return;
     }
-
-    if (
-      Number(form.team_min) < 1 ||
-      Number(form.team_max) < Number(form.team_min)
-    ) {
+    if (Number(form.team_min) < 1 || Number(form.team_max) < Number(form.team_min)) {
       setError("Please enter a valid minimum and maximum team size.");
       return;
     }
-
-    if (
-      form.registration_url &&
-      !/^https?:\/\/\S+$/i.test(form.registration_url)
-    ) {
+    if (form.registration_url && !/^https?:\/\/\S+$/i.test(form.registration_url)) {
       setError("Registration link must start with http:// or https://.");
       return;
     }
 
-    // Frontend only: database/API save will be added next.
-    console.log("Contest form data:", form);
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/contests/create.php", // আপনার ব্যাকএন্ড পাথ দিন
+        form,
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true, // সেশন থেকে organizer_id নেওয়ার জন্য এটি মাস্ট
+        }
+      );
 
-    alert(
-      "Form validation successful! Database save will be connected next."
-    );
+      if (response.data.success) {
+        setSuccess("Contest created successfully! Redirecting to dashboard...");
+        // ২ সেকেন্ড পর ড্যাশবোর্ডে নিয়ে যাবে
+        setTimeout(() => {
+          navigate("/organizer/dashboard");
+        }, 2000);
+      } else {
+        setError(response.data.message || "Failed to create contest.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred while creating the contest.");
+    }
   };
 
   const renderInput = (
@@ -339,7 +341,12 @@ const CreateContest = () => {
             {error}
           </p>
         )}
-
+        {/* Success Message */}
+        {success && (
+          <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+            {success}
+          </p>
+        )}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
@@ -353,7 +360,7 @@ const CreateContest = () => {
             type="submit"
             className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700"
           >
-            Validate Contest Details
+            Submit for Approval
           </button>
         </div>
       </form>
