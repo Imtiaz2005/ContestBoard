@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
 import ContestResults from "./pages/organizer/ContestResults";
 import Discover from "./pages/Discover";
 import ContestDetails from "./pages/ContestDetails";
@@ -112,6 +113,7 @@ function App() {
 
               </Routes>
             </main>
+            <Footer/>
           </ProfileProvider>
         </SavedProvider>
       </BrowserRouter>

@@ -1,48 +1,60 @@
-import { useState } from "react";
-
-const initialOrganizations = [
-  {
-    id: 1,
-    name: "UIU Robotics Club",
-    email: "robotics@uiu.ac.bd",
-    type: "University Club",
-    website: "https://uiu.ac.bd",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "UITS Programming Club",
-    email: "programming@uits.edu.bd",
-    type: "University Club",
-    website: "https://uits.edu.bd",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "TechFest Bangladesh",
-    email: "info@techfest.com",
-    type: "Event Organization",
-    website: "https://example.com",
-    status: "blocked",
-  },
-];
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function AdminOrganizations() {
-  const [organizations, setOrganizations] = useState(initialOrganizations);
+  const [organizations, setOrganizations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [message, setMessage] = useState("");
 
-  const toggleStatus = (id) => {
-    setOrganizations((prev) =>
-      prev.map((org) =>
-        org.id === id
-          ? {
-              ...org,
-              status: org.status === "active" ? "blocked" : "active",
-            }
-          : org
-      )
-    );
+  // ১. ডাটাবেজ থেকে অর্গানাইজেশনের তথ্য লোড করা
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost/ContestBoard/backend/api/admin/get_organizations.php",
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          setOrganizations(response.data.organizations);
+        }
+      } catch (error) {
+        console.error("Error fetching organizations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
+
+  // ২. API এর মাধ্যমে অর্গানাইজেশনের Status (Block / Unblock) করা
+  const toggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "blocked" : "active";
+
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/admin/update_organization_status.php",
+        { id, status: newStatus },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setOrganizations((prev) =>
+          prev.map((org) =>
+            org.id === id ? { ...org, status: newStatus } : org
+          )
+        );
+        setMessage(`Organization status updated to ${newStatus}.`);
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update organization status.");
+    }
   };
 
   const filteredOrganizations = organizations.filter((org) => {
@@ -50,8 +62,7 @@ export default function AdminOrganizations() {
       org.name.toLowerCase().includes(search.toLowerCase()) ||
       org.email.toLowerCase().includes(search.toLowerCase());
 
-    const matchesFilter =
-      filter === "all" || org.status === filter;
+    const matchesFilter = filter === "all" || org.status === filter;
 
     return matchesSearch && matchesFilter;
   });
@@ -63,6 +74,10 @@ export default function AdminOrganizations() {
   const blockedCount = organizations.filter(
     (org) => org.status === "blocked"
   ).length;
+
+  if (loading) {
+    return <div className="p-10 text-center text-lg text-slate-500">Loading organizations...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -91,6 +106,12 @@ export default function AdminOrganizations() {
           </h2>
         </div>
       </div>
+
+      {message && (
+        <div className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+          {message}
+        </div>
+      )}
 
       {/* Search and Filter */}
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -140,14 +161,16 @@ export default function AdminOrganizations() {
                     <p className="font-semibold text-gray-800">
                       {org.name}
                     </p>
-                    <a
-                      href={org.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      Visit Website
-                    </a>
+                    {org.website && org.website !== "#" && (
+                      <a
+                        href={org.website.startsWith("http") ? org.website : `https://${org.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Visit Website
+                      </a>
+                    )}
                   </td>
 
                   <td className="px-5 py-4 text-gray-600">
@@ -172,8 +195,8 @@ export default function AdminOrganizations() {
 
                   <td className="px-5 py-4">
                     <button
-                      onClick={() => toggleStatus(org.id)}
-                      className={`rounded-lg px-3 py-2 text-xs font-medium text-white ${
+                      onClick={() => toggleStatus(org.id, org.status)}
+                      className={`rounded-lg px-3 py-2 text-xs font-medium text-white transition ${
                         org.status === "active"
                           ? "bg-red-600 hover:bg-red-700"
                           : "bg-green-600 hover:bg-green-700"
@@ -204,7 +227,6 @@ export default function AdminOrganizations() {
 
       <p className="text-xs text-gray-500">
         Note: Blocking an organization prevents future contest posting.
-        It does not suspend the organization's account.
       </p>
     </div>
   );

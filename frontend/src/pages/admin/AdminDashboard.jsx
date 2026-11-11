@@ -1,74 +1,24 @@
-
-import { useState } from "react";
-
-const stats = [
-  {
-    title: "Total Users",
-    value: "1,248",
-    subtitle: "Registered students & organizers",
-    icon: "👥",
-    color: "blue",
-  },
-  {
-    title: "Total Contests",
-    value: "86",
-    subtitle: "All published and submitted contests",
-    icon: "🏆",
-    color: "violet",
-  },
-  {
-    title: "Pending Approvals",
-    value: "12",
-    subtitle: "Contests waiting for review",
-    icon: "⏳",
-    color: "amber",
-  },
-  {
-    title: "Active Organizers",
-    value: "34",
-    subtitle: "Organizations on ContestBoard",
-    icon: "🏢",
-    color: "emerald",
-  },
-];
-
-const pendingContests = [
-  {
-    title: "National Programming Contest",
-    organizer: "UITS Programming Club",
-    category: "Programming",
-    date: "Oct 25, 2026",
-  },
-  {
-    title: "Inter-University Robotics Challenge",
-    organizer: "UIU Robotics Club",
-    category: "Robotics",
-    date: "Oct 24, 2026",
-  },
-  {
-    title: "National Web Design Competition",
-    organizer: "CSE Society",
-    category: "Web Development",
-    date: "Oct 23, 2026",
-  },
-];
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { useProfile } from "../../context/ProfileContext";
 
 const activities = [
   {
-    title: "New organizer registration",
-    detail: "A new organization joined ContestBoard",
-    time: "Recently",
-    icon: "🏢",
+    title: "Platform Monitor",
+    detail: "System is running smoothly.",
+    time: "Just now",
+    icon: "🟢",
   },
   {
-    title: "Contest submitted for review",
-    detail: "A new contest is waiting for approval",
-    time: "Recently",
+    title: "Contest Review",
+    detail: "Check the pending tab for new submissions.",
+    time: "Ongoing",
     icon: "📋",
   },
   {
     title: "Platform announcement",
-    detail: "Check the announcement management section",
+    detail: "Update users via the announcement section.",
     time: "Recently",
     icon: "📢",
   },
@@ -82,7 +32,69 @@ const colorClasses = {
 };
 
 export default function AdminDashboard() {
+  const { profile } = useProfile();
+  
+  const [dashboardStats, setDashboardStats] = useState({
+    total_users: 0,
+    total_contests: 0,
+    pending_contests: 0,
+    active_organizers: 0
+  });
+  const [pendingContests, setPendingContests] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost/ContestBoard/backend/api/admin/get_dashboard_data.php",
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          setDashboardStats(response.data.stats);
+          setPendingContests(response.data.pendingContests);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const stats = [
+    {
+      title: "Total Users",
+      value: dashboardStats.total_users,
+      subtitle: "Registered students & organizers",
+      icon: "👥",
+      color: "blue",
+    },
+    {
+      title: "Total Contests",
+      value: dashboardStats.total_contests,
+      subtitle: "All published and submitted contests",
+      icon: "🏆",
+      color: "violet",
+    },
+    {
+      title: "Pending Approvals",
+      value: dashboardStats.pending_contests,
+      subtitle: "Contests waiting for review",
+      icon: "⏳",
+      color: "amber",
+    },
+    {
+      title: "Active Organizers",
+      value: dashboardStats.active_organizers,
+      subtitle: "Organizations on ContestBoard",
+      icon: "🏢",
+      color: "emerald",
+    },
+  ];
 
   const filteredContests = pendingContests.filter((contest) =>
     `${contest.title} ${contest.organizer} ${contest.category}`
@@ -112,12 +124,12 @@ export default function AdminDashboard() {
 
           <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700">
-              A
+              {(profile.name || "A").charAt(0).toUpperCase()}
             </div>
 
             <div>
               <p className="text-sm font-semibold text-slate-800">
-                Administrator
+                {profile.name || "Administrator"}
               </p>
               <p className="text-xs text-slate-500">Platform management</p>
             </div>
@@ -156,7 +168,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <h3 className="mt-5 text-3xl font-bold text-slate-900">
-                  {stat.value}
+                  {loading ? "..." : stat.value}
                 </h3>
 
                 <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -183,7 +195,7 @@ export default function AdminDashboard() {
               </div>
 
               <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                {filteredContests.length} shown
+                {filteredContests.length} pending
               </span>
             </div>
 
@@ -198,7 +210,9 @@ export default function AdminDashboard() {
             </div>
 
             <div className="mt-4 space-y-3">
-              {filteredContests.map((contest) => (
+              {loading ? (
+                <div className="py-10 text-center text-sm text-slate-500">Loading pending contests...</div>
+              ) : filteredContests.map((contest) => (
                 <div
                   key={contest.title}
                   className="rounded-xl border border-slate-100 p-4 transition hover:border-indigo-200 hover:bg-slate-50"
@@ -224,20 +238,23 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <span className="w-fit shrink-0 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-                      Pending
-                    </span>
+                    <Link
+                      to="/admin/contests"
+                      className="w-fit shrink-0 rounded-lg bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      Review
+                    </Link>
                   </div>
                 </div>
               ))}
 
-              {filteredContests.length === 0 && (
+              {!loading && filteredContests.length === 0 && (
                 <div className="rounded-xl bg-slate-50 px-4 py-10 text-center">
-                  <p className="font-medium text-slate-700">
-                    No contests found
+                  <p className="font-medium text-emerald-600">
+                    All caught up!
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    Try another search term.
+                    There are no pending contests right now.
                   </p>
                 </div>
               )}
@@ -294,22 +311,22 @@ export default function AdminDashboard() {
           </p>
 
           <div className="mt-5 flex flex-wrap gap-3">
-            <div className="rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium">
+            <Link to="/admin/contests" className="rounded-lg bg-white/20 hover:bg-white/30 transition px-4 py-2.5 text-sm font-medium">
               Contest Review
-            </div>
+            </Link>
 
-            <div className="rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium">
+            <Link to="/admin/users" className="rounded-lg bg-white/20 hover:bg-white/30 transition px-4 py-2.5 text-sm font-medium">
               User Management
-            </div>
+            </Link>
 
-            <div className="rounded-lg bg-white/15 px-4 py-2.5 text-sm font-medium">
-              Announcements
-            </div>
+            <Link to="/admin/organizations" className="rounded-lg bg-white/20 hover:bg-white/30 transition px-4 py-2.5 text-sm font-medium">
+              Organizations
+            </Link>
           </div>
         </section>
 
         <p className="pb-2 text-center text-xs text-slate-400">
-          ContestBoard Admin Panel · Frontend Preview
+          ContestBoard Admin Panel · Powered by React & PHP
         </p>
       </div>
     </div>

@@ -1,48 +1,5 @@
-
-import { useState } from "react";
-
-const initialUsers = [
-  {
-    id: 1,
-    name: "Rahim Ahmed",
-    email: "rahim@example.com",
-    role: "student",
-    status: "active",
-    joined: "Oct 20, 2026",
-  },
-  {
-    id: 2,
-    name: "Karim Hasan",
-    email: "karim@example.com",
-    role: "student",
-    status: "active",
-    joined: "Oct 19, 2026",
-  },
-  {
-    id: 3,
-    name: "UITS Programming Club",
-    email: "uits@example.com",
-    role: "organizer",
-    status: "active",
-    joined: "Oct 18, 2026",
-  },
-  {
-    id: 4,
-    name: "Nusrat Jahan",
-    email: "nusrat@example.com",
-    role: "student",
-    status: "suspended",
-    joined: "Oct 15, 2026",
-  },
-  {
-    id: 5,
-    name: "UIU Robotics Club",
-    email: "uiu@example.com",
-    role: "organizer",
-    status: "active",
-    joined: "Oct 12, 2026",
-  },
-];
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const statusStyles = {
   active: "bg-emerald-50 text-emerald-700",
@@ -50,69 +7,109 @@ const statusStyles = {
 };
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [message, setMessage] = useState("");
 
-  const toggleStatus = (id) => {
-    setUsers((current) =>
-      current.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status:
-                user.status === "active" ? "suspended" : "active",
-            }
-          : user
-      )
-    );
+  // ১. ডাটাবেজ থেকে সব ইউজারের তথ্য লোড করা
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost/ContestBoard/backend/api/admin/get_users.php",
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          setUsers(response.data.users);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setMessage("Account status updated in demo mode.");
+    fetchUsers();
+  }, []);
+
+  // ২. ইউজার অ্যাকাউন্ট Suspend বা Activate করা
+  const toggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "suspended" : "active";
+
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/admin/update_user_status.php",
+        { id, status: newStatus },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setUsers((current) =>
+          current.map((user) =>
+            user.id === id ? { ...user, status: newStatus } : user
+          )
+        );
+        setMessage(`Account status updated to ${newStatus}.`);
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update status.");
+    }
   };
 
-  const removeUser = (id) => {
+  // ৩. ডাটাবেজ থেকে ইউজার অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করা
+  const removeUser = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to remove this account?"
+      "Are you sure you want to permanently remove this user account?"
     );
 
     if (!confirmed) return;
 
-    setUsers((current) => current.filter((user) => user.id !== id));
-    setMessage("Account removed from this demo list.");
+    try {
+      const response = await axios.post(
+        "http://localhost/ContestBoard/backend/api/admin/delete_user.php",
+        { id },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setUsers((current) => current.filter((user) => user.id !== id));
+        setMessage("Account permanently removed.");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to remove user account.");
+    }
   };
 
   const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      `${user.name} ${user.email}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
+    const matchesSearch = `${user.name} ${user.email}`
+      .toLowerCase()
+      .includes(search.toLowerCase());
 
-    const matchesRole =
-      roleFilter === "all" || user.role === roleFilter;
-
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
 
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const studentCount = users.filter(
-    (user) => user.role === "student"
-  ).length;
+  const studentCount = users.filter((user) => user.role === "student").length;
+  const organizerCount = users.filter((user) => user.role === "organizer").length;
+  const activeCount = users.filter((user) => user.status === "active").length;
+  const suspendedCount = users.filter((user) => user.status === "suspended").length;
 
-  const organizerCount = users.filter(
-    (user) => user.role === "organizer"
-  ).length;
-
-  const activeCount = users.filter(
-    (user) => user.status === "active"
-  ).length;
-
-  const suspendedCount = users.filter(
-    (user) => user.status === "suspended"
-  ).length;
+  if (loading) {
+    return <div className="p-10 text-center text-lg text-slate-500">Loading users...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -245,7 +242,7 @@ export default function AdminUsers() {
 
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                          statusStyles[user.status]
+                          statusStyles[user.status] || "bg-emerald-50 text-emerald-700"
                         }`}
                       >
                         {user.status}
@@ -261,7 +258,7 @@ export default function AdminUsers() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => toggleStatus(user.id)}
+                    onClick={() => toggleStatus(user.id, user.status)}
                     className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                       user.status === "active"
                         ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
@@ -303,10 +300,6 @@ export default function AdminUsers() {
             Suspended accounts: {suspendedCount}
           </span>
         </div>
-
-        <p className="mt-3 text-xs text-slate-400">
-          Demo mode: changes are temporary and are not saved to the database.
-        </p>
       </section>
     </div>
   );

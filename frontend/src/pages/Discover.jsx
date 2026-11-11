@@ -21,7 +21,6 @@ function Discover() {
   
   const { savedIds, toggleSaved } = useSavedContests();
 
-  // ১. ডাটাবেজ থেকে অ্যাপ্রুভড কনটেস্টগুলো নিয়ে আসা
   useEffect(() => {
     const fetchContests = async () => {
       try {
@@ -41,7 +40,6 @@ function Discover() {
     fetchContests();
   }, []);
 
-  // Search, category and filters
   const filteredContests = contests
     .filter((contest) => {
       const query = search.trim().toLowerCase();
@@ -217,55 +215,67 @@ function Discover() {
               return (
                 <article
                   key={contest.contest_id}
-                  className="rounded-xl border border-gray-200 bg-white p-4 transition hover:-translate-y-1 hover:shadow-md flex flex-col h-full"
+                  className="rounded-xl border border-gray-200 bg-white transition hover:-translate-y-1 hover:shadow-md flex flex-col h-full overflow-hidden"
                 >
-                  <div className="flex h-28 items-center justify-center rounded-lg bg-indigo-50 shrink-0">
-                    <span className="text-sm font-medium text-indigo-400">
-                      {contest.category}
-                    </span>
+                  {/* Banner Image or Placeholder */}
+                  <div 
+                    className="flex h-36 w-full items-center justify-center bg-indigo-50 shrink-0 bg-cover bg-center border-b border-gray-100"
+                    style={{
+                      backgroundImage: contest.banner_url 
+                        ? `url("${contest.banner_url}")` 
+                        : "none"
+                    }}
+                  >
+                    {!contest.banner_url && (
+                      <span className="text-sm font-medium text-indigo-400">
+                        {contest.category}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700">
-                      Deadline: {contest.registration_deadline}
-                    </span>
-                    <span
-                      className={`rounded-md px-2 py-1 text-xs font-semibold ${
-                        isFree ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {isFree ? "Free" : "Paid"}
-                    </span>
-                  </div>
+                  <div className="p-4 flex flex-col flex-1">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700">
+                        Deadline: {contest.registration_deadline}
+                      </span>
+                      <span
+                        className={`rounded-md px-2 py-1 text-xs font-semibold ${
+                          isFree ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {isFree ? "Free" : "Paid"}
+                      </span>
+                    </div>
 
-                  <h3 className="mt-3 font-semibold text-gray-900 line-clamp-2">
-                    {contest.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500 line-clamp-1">
-                    {contest.organizer}
-                  </p>
-                  <p className="mt-1 mb-4 text-xs text-gray-400 line-clamp-1">
-                    {contest.event_mode} {contest.venue && `- ${contest.venue}`}
-                  </p>
-                  
-                  <div className="mt-auto pt-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleSaved(contest.contest_id)}
-                      className={`mb-2 w-full rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
-                        savedIds.includes(contest.contest_id)
-                          ? "border-indigo-700 bg-indigo-50 text-indigo-700"
-                          : "border-gray-300 bg-white text-gray-700 hover:border-indigo-500"
-                      }`}
-                    >
-                      {savedIds.includes(contest.contest_id) ? "♥ Saved" : "♡ Save contest"}
-                    </button>
-                    <Link
-                      to={`/contests/${contest.contest_id}`}
-                      className="block w-full rounded-lg bg-indigo-700 px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-800"
-                    >
-                      View details
-                    </Link>
+                    <h3 className="mt-3 font-semibold text-gray-900 line-clamp-2">
+                      {contest.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500 line-clamp-1">
+                      {contest.organizer}
+                    </p>
+                    <p className="mt-1 mb-4 text-xs text-gray-400 line-clamp-1">
+                      {contest.event_mode} {contest.venue && `- ${contest.venue}`}
+                    </p>
+                    
+                    <div className="mt-auto pt-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleSaved(contest.contest_id)}
+                        className={`mb-2 w-full rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
+                          savedIds.includes(contest.contest_id)
+                            ? "border-indigo-700 bg-indigo-50 text-indigo-700"
+                            : "border-gray-300 bg-white text-gray-700 hover:border-indigo-500"
+                        }`}
+                      >
+                        {savedIds.includes(contest.contest_id) ? "♥ Saved" : "♡ Save contest"}
+                      </button>
+                      <Link
+                        to={`/contests/${contest.contest_id}`}
+                        className="block w-full rounded-lg bg-indigo-700 px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-800"
+                      >
+                        View details
+                      </Link>
+                    </div>
                   </div>
                 </article>
               );

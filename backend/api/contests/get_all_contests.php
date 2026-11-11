@@ -5,11 +5,11 @@ require_once "../../config/database.php";
 header("Content-Type: application/json");
 
 try {
-    // শুধু approved কনটেস্টগুলো আনা হবে এবং অর্গানাইজারের নাম JOIN করে আনা হবে
+    // c.banner_url যুক্ত করা হয়েছে
     $stmt = $pdo->prepare("
         SELECT 
             c.contest_id, c.title, c.category, c.event_mode, c.venue, 
-            c.registration_deadline, c.registration_fee, 
+            c.registration_deadline, c.registration_fee, c.banner_url,
             COALESCE(op.organization_name, u.name) AS organizer
         FROM contests c
         LEFT JOIN users u ON c.organizer_id = u.user_id
